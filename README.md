@@ -105,7 +105,7 @@ streamly-recommendation-system/
 
 ```bash
 git clone <repository-url>
-cd streamly-recommendation-system
+cd <repository-name>
 ```
 
 ### Step 2: Create Virtual Environment
