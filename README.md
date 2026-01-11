@@ -108,7 +108,7 @@ git clone <repository-url>
 cd <repository-name>
 ```
 
-### Step 2: Create Virtual Environment
+### Step 2: Create Virtual Environment (Using Python 11)
 
 ```bash
 python -m venv .venv
