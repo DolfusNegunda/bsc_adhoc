@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamly - Personalized Recommendations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 1em;
+        }
+
+        .search-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 5px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        .profile-selector {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .result-card h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 1.3em;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.6em;
+        }
+
+        .result-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .result-score {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .result-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-category {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-rating {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-year {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-imdb {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .result-details {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .result-details p {
+            margin: 6px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .result-details strong {
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state p {
+            font-size: 1.1em;
+            margin-top: 15px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #c62828;
+        }
+
+        .results-count {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .pagination button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .pagination button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            color: #666;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .profile-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .search-filters {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Streamly</h1>
+            <p>Your Personalized Streaming Recommendations</p>
+        </header>
+
+        <!-- Statistics Section -->
+        <div class="section">
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-card">
+                    <h3 id="statTitles">-</h3>
+                    <p>Total Titles</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="statMovies">-</h3>
+                    <p>Movies</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="statSeries">-</h3>
+                    <p>Series</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="statRating">-</h3>
+                    <p>Avg Rating</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Search Section -->
+        <div class="section">
+            <h2>Search Titles</h2>
+            <div class="search-filters">
+                <div class="form-group">
+                    <label for="searchTitle">Title Name</label>
+                    <input type="text" id="searchTitle" placeholder="Search by title name..."
+                        onkeypress="if(event.key === 'Enter') searchTitles()">
+                </div>
+                <div class="form-group">
+                    <label for="searchCategory">Category</label>
+                    <select id="searchCategory">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="searchType">Type</label>
+                    <select id="searchType">
+                        <option value="">All Types</option>
+                        <option value="Movie">Movie</option>
+                        <option value="Series">Series</option>
+                        <option value="Kids">Kids Shows</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="searchAgeRating">Age Rating</label>
+                    <select id="searchAgeRating">
+                        <option value="">All Ratings</option>
+                        <option value="G">G</option>
+                        <option value="PG">PG</option>
+                        <option value="13+">13+</option>
+                        <option value="16+">16+</option>
+                        <option value="18+">18+</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="searchYear">Year</label>
+                    <input type="number" id="searchYear" placeholder="e.g., 2023" min="1900" max="2026">
+                </div>
+            </div>
+            <div class="search-actions">
+                <button class="btn" onclick="searchTitles()">🔍 Search Titles</button>
+                <button class="btn btn-secondary" onclick="clearSearch()">Clear Filters</button>
+            </div>
+            <div id="searchResults"></div>
+        </div>
+
+        <!-- Profile Selection and Recommendations -->
+        <div class="section">
+            <h2>Personalized Recommendations</h2>
+            <div class="profile-selector">
+                <div class="form-group">
+                    <label for="profileSearch">Search Profile</label>
+                    <input type="text" id="profileSearch" placeholder="Type to search profiles..."
+                        oninput="filterProfiles()" onkeypress="if(event.key === 'Enter') getRecommendations()">
+                </div>
+                <div class="form-group">
+                    <label for="preferenceCategory">Preference (Optional)</label>
+                    <select id="preferenceCategory">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="limit">Number of Recommendations</label>
+                    <select id="limit">
+                        <option value="5">5 recommendations</option>
+                        <option value="10" selected>10 recommendations</option>
+                        <option value="15">15 recommendations</option>
+                        <option value="20">20 recommendations</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="profileId">Select Profile</label>
+                <select id="profileId" size="5" style="height: auto;">
+                    <option value="">Loading profiles...</option>
+                </select>
+            </div>
+            <button class="btn" onclick="getRecommendations()" style="width: 100%;">
+                Get Personalized Recommendations
+            </button>
+            <div id="recommendationsResults"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let allProfiles = [];
+        let allCategories = [];
+        let currentSearchResults = [];
+        let currentSearchPage = 0;
+        const ITEMS_PER_PAGE = 10;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadStatistics();
+            await loadCategories();
+            await loadAllProfiles();
+        });
+
+        async function loadStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/statistics`);
+                const data = await response.json();
+
+                document.getElementById('statTitles').textContent = data.data.total_titles;
+                document.getElementById('statMovies').textContent = data.data.movies;
+                document.getElementById('statSeries').textContent = data.data.series;
+                document.getElementById('statRating').textContent = data.data.avg_imdb_rating.toFixed(1);
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/categories`);
+                const data = await response.json();
+
+                // Populate search category dropdown
+                const searchSelect = document.getElementById('searchCategory');
+                data.data.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    searchSelect.appendChild(option);
+                });
+
+                // Populate preference category dropdown
+                const prefSelect = document.getElementById('preferenceCategory');
+                data.data.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    prefSelect.appendChild(option);
+                });
+
+                allCategories = data.data;
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        async function loadAllProfiles() {
+            try {
+                const response = await fetch(`${API_BASE}/profiles`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    allProfiles = data.data;
+                    console.log(`Loaded ${allProfiles.length} profiles`);
+                    displayProfiles(allProfiles);
+                } else {
+                    throw new Error(data.message || 'Failed to load profiles');
+                }
+            } catch (error) {
+                console.error('Error loading profiles:', error);
+                showError('Failed to load profiles. Make sure the API is running.');
+            }
+        }
+
+        function displayProfiles(profiles) {
+            const select = document.getElementById('profileId');
+            select.innerHTML = '';
+
+            if (profiles.length === 0) {
+                select.innerHTML = '<option value="">No profiles found</option>';
+                return;
+            }
+
+            profiles.forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.profile_id;
+                // Format: "1. Gran"
+                option.textContent = `${profile.profile_id}. ${profile.profile_name}`;
+                select.appendChild(option);
+            });
+        }
+
+        function filterProfiles() {
+            const searchTerm = document.getElementById('profileSearch').value.toLowerCase();
+
+            if (!searchTerm) {
+                displayProfiles(allProfiles);
+                return;
+            }
+
+            const filtered = allProfiles.filter(profile =>
+                profile.profile_name.toLowerCase().includes(searchTerm) ||
+                profile.profile_id.toString().includes(searchTerm)
+            );
+
+            displayProfiles(filtered);
+        }
+
+        async function searchTitles() {
+            const title = document.getElementById('searchTitle').value.trim();
+            const category = document.getElementById('searchCategory').value;
+            const type = document.getElementById('searchType').value;
+            const ageRating = document.getElementById('searchAgeRating').value;
+            const year = document.getElementById('searchYear').value;
+
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Searching...</p></div>';
+
+            try {
+                let results = [];
+
+                if (title) {
+                    const response = await fetch(`${API_BASE}/titles/search?q=${encodeURIComponent(title)}&limit=100`);
+                    const data = await response.json();
+                    results = data.status === 'success' ? data.data : [];
+                } else {
+                    const searchTerms = ['a', 'the', 'of', 'and', 'to'];
+                    const allResults = new Set();
+
+                    for (const term of searchTerms) {
+                        const response = await fetch(`${API_BASE}/titles/search?q=${term}&limit=50`);
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            data.data.forEach(item => {
+                                allResults.add(JSON.stringify(item));
+                            });
+                        }
+                    }
+
+                    results = Array.from(allResults).map(item => JSON.parse(item));
+                }
+
+                // Apply filters
+                if (category) {
+                    results = results.filter(t => t.category === category);
+                }
+                if (type === 'Kids') {
+                    results = results.filter(t => t.age_rating === 'G' || t.age_rating === 'PG');
+                } else if (type) {
+                    results = results.filter(t => t.type === type);
+                }
+                if (ageRating) {
+                    results = results.filter(t => t.age_rating === ageRating);
+                }
+                if (year) {
+                    results = results.filter(t => t.year === parseInt(year));
+                }
+
+                currentSearchResults = results;
+                currentSearchPage = 0;
+                displaySearchResultsPage();
+            } catch (error) {
+                console.error('Error searching titles:', error);
+                showSearchError('Failed to search titles.');
+            }
+        }
+
+        function displaySearchResultsPage() {
+            const container = document.getElementById('searchResults');
+            const start = currentSearchPage * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pageResults = currentSearchResults.slice(start, end);
+            const totalPages = Math.ceil(currentSearchResults.length / ITEMS_PER_PAGE);
+
+            if (currentSearchResults.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No results found. Try different search criteria.</p></div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="results-count">Found ${currentSearchResults.length} result${currentSearchResults.length !== 1 ? 's' : ''} (Page ${currentSearchPage + 1} of ${totalPages})</div>
+                <div class="results-grid">
+                    ${pageResults.map(title => createTitleCard(title, false)).join('')}
+                </div>
+                ${totalPages > 1 ? `
+                    <div class="pagination">
+                        <button onclick="previousPage()" ${currentSearchPage === 0 ? 'disabled' : ''}>← Previous</button>
+                        <span>Page ${currentSearchPage + 1} of ${totalPages}</span>
+                        <button onclick="nextPage()" ${currentSearchPage >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function createTitleCard(title, showScore = false) {
+            const categories = [];
+            if (title.category && title.category !== 'Unknown') {
+                categories.push(title.category);
+            }
+            if (title.sub_category && title.sub_category !== 'Unknown' && title.sub_category !== title.category) {
+                categories.push(title.sub_category);
+            }
+            const categoryText = categories.length > 0 ? categories.join(' / ') : 'Unknown';
+
+            return `
+                <div class="result-card" onclick="showTitleDetails('${title.show_id}')">
+                    <h3>${title.title_name}</h3>
+                    <div class="result-meta">
+                        <span>${title.type} • ${title.year}</span>
+                        ${showScore && title.score ? `<span class="result-score">Score: ${title.score}</span>` : ''}
+                    </div>
+                    <div class="result-badges">
+                        <span class="badge badge-category">${categoryText}</span>
+                        <span class="badge badge-rating">${title.age_rating}</span>
+                        ${title.imdb_rating ? `<span class="badge badge-imdb">⭐ ${title.imdb_rating}/10</span>` : ''}
+                    </div>
+                    <div class="result-details">
+                        <p><strong>Duration:</strong> ${title.duration ? title.duration + ' min' : 'N/A'}</p>
+                        <p><strong>Language:</strong> ${title.language || 'Unknown'}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function nextPage() {
+            currentSearchPage++;
+            displaySearchResultsPage();
+            window.scrollTo({ top: document.getElementById('searchResults').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function previousPage() {
+            currentSearchPage--;
+            displaySearchResultsPage();
+            window.scrollTo({ top: document.getElementById('searchResults').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function clearSearch() {
+            document.getElementById('searchTitle').value = '';
+            document.getElementById('searchCategory').value = '';
+            document.getElementById('searchType').value = '';
+            document.getElementById('searchAgeRating').value = '';
+            document.getElementById('searchYear').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            currentSearchResults = [];
+            currentSearchPage = 0;
+        }
+
+        async function getRecommendations() {
+            const profileId = document.getElementById('profileId').value;
+            const limit = document.getElementById('limit').value;
+            const preferenceCategory = document.getElementById('preferenceCategory').value;
+
+            if (!profileId) {
+                showError('Please select a profile first.');
+                return;
+            }
+
+            const container = document.getElementById('recommendationsResults');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading your personalized recommendations...</p></div>';
+
+            try {
+                let url = `${API_BASE}/recommendations/${profileId}?limit=${limit}`;
+
+                // If preference category is selected, use category-specific endpoint
+                if (preferenceCategory) {
+                    url = `${API_BASE}/recommendations/${profileId}/category/${encodeURIComponent(preferenceCategory)}?limit=${limit}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    displayRecommendations(data.data, preferenceCategory);
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                console.error('Error getting recommendations:', error);
+                showError('Failed to get recommendations. Make sure the API is running on http://localhost:5000');
+            }
+        }
+
+        function displayRecommendations(recommendations, filterCategory = '') {
+            const container = document.getElementById('recommendationsResults');
+
+            if (recommendations.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No recommendations found. Try a different profile or category.</p></div>';
+                return;
+            }
+
+            const categoryNote = filterCategory ? ` (${filterCategory} only)` : '';
+
+            container.innerHTML = `
+                <div class="results-count">Showing ${recommendations.length} personalized recommendation${recommendations.length !== 1 ? 's' : ''}${categoryNote}</div>
+                <div class="results-grid">
+                    ${recommendations.map(rec => createTitleCard(rec, true)).join('')}
+                </div>
+            `;
+        }
+
+        async function showTitleDetails(showId) {
+            try {
+                const response = await fetch(`${API_BASE}/titles/${showId}`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const title = data.data;
+                    const details = `
+Title: ${title.title_name}
+Category: ${title.category}${title.sub_category && title.sub_category !== title.category ? ' / ' + title.sub_category : ''}
+Year: ${title.year}
+Type: ${title.type}
+Duration: ${title.duration} min
+Age Rating: ${title.age_rating}
+Language: ${title.language}
+${title.imdb_rating ? `IMDB Rating: ${title.imdb_rating}/10` : ''}
+${title.imdb_votes ? `IMDB Votes: ${title.imdb_votes}` : ''}
+                    `.trim();
+                    alert(details);
+                }
+            } catch (error) {
+                console.error('Error getting title details:', error);
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('recommendationsResults');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        function showSearchError(message) {
+            const container = document.getElementById('searchResults');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+    </script>
+</body>
+
+</html>
